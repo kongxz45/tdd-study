@@ -107,6 +107,25 @@ public class ContainerTest {
         assertTrue(optionalComponent.isEmpty());
       }
 
+      @Test
+      public void should_throw_exception_if_cyclic_dependencies_found() {
+        context.bind(Component.class, ComponentWithInjectConstructor.class);
+        context.bind(Dependency.class, DependencyDependOnComponent.class);
+
+        assertThrows(CyclicDependenciesFoundException.class, () -> context.get(Dependency.class));
+      }
+
+      // A->B-, B->C, C->A
+      @Test
+      public void should_throw_exception_if_transitive_cyclic_dependencies_found() {
+        context.bind(Component.class, ComponentWithInjectConstructor.class);
+        context.bind(AnotherDependency.class, AnotherDependencyDependOnDependency.class);
+        context.bind(Dependency.class, DependencyDependOnComponent.class);
+
+        assertThrows(CyclicDependenciesFoundException.class, () -> context.get(Dependency.class));
+
+      }
+
 
 
       //TODO abstract class
@@ -186,6 +205,26 @@ class ComponentWithMultiInjectConstructors implements Component{
 class ComponentWithNoInjectNorDefaultConstructor implements Component{
 
   public ComponentWithNoInjectNorDefaultConstructor(String name) {
+  }
+}
+
+class DependencyDependOnComponent implements Dependency {
+  private Component component;
+
+  @Inject
+  public DependencyDependOnComponent(Component component) {
+    this.component = component;
+  }
+}
+
+interface AnotherDependency {}
+
+class AnotherDependencyDependOnDependency implements AnotherDependency{
+  private Dependency dependency;
+
+  @Inject
+  public AnotherDependencyDependOnDependency(Dependency dependency) {
+    this.dependency = dependency;
   }
 }
 
