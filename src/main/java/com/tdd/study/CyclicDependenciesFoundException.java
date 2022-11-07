@@ -2,6 +2,7 @@ package com.tdd.study;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class CyclicDependenciesFoundException extends RuntimeException {
 
@@ -14,6 +15,10 @@ public class CyclicDependenciesFoundException extends RuntimeException {
   public CyclicDependenciesFoundException(Class<?> componentType, CyclicDependenciesFoundException e) {
     this.components.add(componentType);
     this.components.addAll(e.getComponents());
+  }
+
+  public CyclicDependenciesFoundException(List<Class<?>> visiting) {
+    this.components.addAll(visiting);
   }
 
   public List<Class<?>> getComponents() {
