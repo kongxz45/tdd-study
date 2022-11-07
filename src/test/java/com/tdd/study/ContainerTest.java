@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -46,8 +47,7 @@ public class ContainerTest {
         Context context = new Context();
         context.bind(Component.class, ComponentWithDefaultConstructor.class);
 
-        Component instance = context.get(Component.class)
-            .orElseThrow(() -> new DependencyNotFoundException());
+        Component instance = context.get(Component.class).get();
 
         assertNotNull(instance);
         assertTrue(instance instanceof ComponentWithDefaultConstructor);
@@ -61,8 +61,7 @@ public class ContainerTest {
         context.bind(Component.class, ComponentWithInjectConstructor.class);
         context.bind(Dependency.class, dependency);
 
-        Component instance = context.get(Component.class)
-            .orElseThrow(() -> new DependencyNotFoundException());
+        Component instance = context.get(Component.class).get();
         assertNotNull(instance);
         assertSame(dependency, ((ComponentWithInjectConstructor)instance).getDependency());
       }
@@ -96,9 +95,25 @@ public class ContainerTest {
       }
 
       @Test
-      public void should_throw_exception_if_no_dependency_provided() {
+      public void should_throw_exception_if_dependency_not_found() {
         context.bind(Component.class, ComponentWithInjectConstructor.class);
-        assertThrows(DependencyNotFoundException.class, () -> context.get(Component.class).get());
+
+        DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> context.get(Component.class).get());
+        assertEquals(Dependency.class, exception.getDependency());
+      }
+
+      @Test
+      public void should_throw_exception_if_transitive_dependency_not_found() {
+
+        context.bind(AnotherDependency.class, AnotherDependencyDependOnDependency.class);
+        context.bind(Dependency.class, DependencyDependOnComponent.class);
+
+        DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> context.get(AnotherDependency.class).get());
+        assertEquals(Component.class, exception.getDependency());
+        assertEquals(Dependency.class, exception.getComponent());
+
+
+
       }
 
       @Test
@@ -107,22 +122,34 @@ public class ContainerTest {
         assertTrue(optionalComponent.isEmpty());
       }
 
+      // A->B, B->A
       @Test
       public void should_throw_exception_if_cyclic_dependencies_found() {
         context.bind(Component.class, ComponentWithInjectConstructor.class);
         context.bind(Dependency.class, DependencyDependOnComponent.class);
 
-        assertThrows(CyclicDependenciesFoundException.class, () -> context.get(Dependency.class));
+        CyclicDependenciesFoundException exception = assertThrows(CyclicDependenciesFoundException.class, () -> context.get(Dependency.class));
+
+        List<Class<?>> components = exception.getComponents();
+
+        assertTrue(components.contains(Component.class));
+        assertTrue(components.contains(Dependency.class));
+
       }
 
-      // A->B-, B->C, C->A
+      // A->B, B->C, C->A
       @Test
       public void should_throw_exception_if_transitive_cyclic_dependencies_found() {
         context.bind(Component.class, ComponentWithInjectConstructor.class);
-        context.bind(AnotherDependency.class, AnotherDependencyDependOnDependency.class);
-        context.bind(Dependency.class, DependencyDependOnComponent.class);
+        context.bind(Dependency.class, DependencyDependOnAnotherDependency.class);
+        context.bind(AnotherDependency.class, AnotherDependencyDependOnComponent.class);
 
-        assertThrows(CyclicDependenciesFoundException.class, () -> context.get(Dependency.class));
+        CyclicDependenciesFoundException exception = assertThrows(CyclicDependenciesFoundException.class, () -> context.get(Dependency.class));
+
+        List<Class<?>> components = exception.getComponents();
+        assertTrue(components.contains(Component.class));
+        assertTrue(components.contains(AnotherDependency.class));
+        assertTrue(components.contains(Dependency.class));
 
       }
 
@@ -217,6 +244,15 @@ class DependencyDependOnComponent implements Dependency {
   }
 }
 
+class DependencyDependOnAnotherDependency implements Dependency {
+  private AnotherDependency anotherDependency;
+
+  @Inject
+  public DependencyDependOnAnotherDependency(AnotherDependency anotherDependency) {
+    this.anotherDependency = anotherDependency;
+  }
+}
+
 interface AnotherDependency {}
 
 class AnotherDependencyDependOnDependency implements AnotherDependency{
@@ -225,6 +261,16 @@ class AnotherDependencyDependOnDependency implements AnotherDependency{
   @Inject
   public AnotherDependencyDependOnDependency(Dependency dependency) {
     this.dependency = dependency;
+  }
+}
+
+class AnotherDependencyDependOnComponent implements AnotherDependency {
+
+  private Component component;
+
+  @Inject
+  public AnotherDependencyDependOnComponent(Component component) {
+    this.component = component;
   }
 }
 

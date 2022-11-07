@@ -23,44 +23,21 @@ public class Context {
   public <Type, Implementation extends Type> void bind(Class<Type> type,
       Class<Implementation> implementation) {
     Constructor<?> constructor = getConstructor(implementation);
-    providers.put(type, new ConstructorInjectionProvider<>(constructor));
+    providers.put(type, new ConstructorInjectionProvider<>(type, constructor));
 
   }
 
-  class ConstructorInjectionProvider<T> implements Provider<T> {
-
-    private boolean constructing = false;
-
-    private Constructor<T> constructor;
-
-    public ConstructorInjectionProvider(Constructor<T> constructor) {
-      this.constructor = constructor;
-    }
-
-    @Override
-    public T get() {
-      if (constructing) throw new CyclicDependenciesFoundException();
-      constructing = true;
-      Object[] dependencies = stream(constructor.getParameters())
-          .map(
-              parameter -> Context.this.get(parameter.getType()).orElseThrow(
-                  () -> new DependencyNotFoundException())).toArray(Object[]::new);
-      try {
-        return (T) ((Constructor<?>) constructor).newInstance(dependencies);
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-        throw new RuntimeException(e);
-      }
-      finally {
-        constructing = false;
-      }
-    }
+  public <Type> Optional<Type> get(Class<Type> type) {
+    return Optional.ofNullable(providers.get(type)).map(provider -> (Type) provider.get());
   }
 
   private static <Type> Constructor<Type> getConstructor(Class<Type> implementation) {
     List<Constructor> injectConstructors = stream(implementation.getConstructors())
         .filter(constructor -> constructor.isAnnotationPresent(
             Inject.class)).collect(Collectors.toList());
-    if (injectConstructors.size() > 1) throw new IllegalComponentException();
+    if (injectConstructors.size() > 1) {
+      throw new IllegalComponentException();
+    }
     return (Constructor<Type>) injectConstructors.stream().findFirst().orElseGet(() -> {
       try {
         return implementation.getConstructor();
@@ -68,10 +45,39 @@ public class Context {
         throw new IllegalComponentException();
       }
     });
-
   }
 
-  public <Type> Optional<Type> get(Class<Type> type) {
-    return Optional.ofNullable(providers.get(type)).map(provider -> (Type)provider.get());
+  class ConstructorInjectionProvider<T> implements Provider<T> {
+
+    private boolean constructing = false;
+    private Class<?> componentType;
+
+    private Constructor<T> constructor;
+
+    public ConstructorInjectionProvider(Class<?> componentType, Constructor<T> constructor) {
+      this.constructor = constructor;
+      this.componentType = componentType;
+    }
+    @Override
+    public T get() {
+      if (constructing) {
+        throw new CyclicDependenciesFoundException(componentType);
+      }
+      constructing = true;
+      try {
+        Object[] dependencies = stream(constructor.getParameters())
+            .map(
+                parameter -> Context.this.get(parameter.getType()).orElseThrow(
+                    () -> new DependencyNotFoundException(componentType, parameter.getType()))).toArray(Object[]::new);
+        return (T) ((Constructor<?>) constructor).newInstance(dependencies);
+      } catch (CyclicDependenciesFoundException e) {
+        throw new CyclicDependenciesFoundException(componentType, e);
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new RuntimeException(e);
+      } finally {
+        constructing = false;
+      }
+    }
+
   }
 }
