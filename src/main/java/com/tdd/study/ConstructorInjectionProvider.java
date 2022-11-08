@@ -1,16 +1,18 @@
 package com.tdd.study;
 
-import static java.util.Arrays.compare;
 import static java.util.Arrays.stream;
+import static java.util.stream.Stream.concat;
 
 import jakarta.inject.Inject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ConstructorInjectionProvider<T> implements ComponentProvider<T> {
 
@@ -18,9 +20,27 @@ public class ConstructorInjectionProvider<T> implements ComponentProvider<T> {
 
   private List<Field> injectFields;
 
+  private List<Method> injectMethods;
+
   public ConstructorInjectionProvider(Class<T> implementation) {
     this.injectConstructor = getInjectConstructor(implementation);
     this.injectFields = getInjectFields(implementation);
+    this.injectMethods = getInjectMethods(implementation);
+  }
+
+  private static <Type> List<Method> getInjectMethods(Class<Type> implementation) {
+    List<Method> injectMethods = new ArrayList<>();
+    Class<?> current = implementation;
+    while (current != Object.class) {
+      injectMethods.addAll(stream(current.getDeclaredMethods()).filter(
+              method -> method.isAnnotationPresent(Inject.class))
+              .filter(method -> injectMethods.stream().noneMatch(method1 -> method1.getName().equals(method.getName()) && Arrays.equals(method1.getParameterTypes(), method.getParameterTypes())))
+              .filter(method -> stream(implementation.getDeclaredMethods()).filter(method1 -> !method1.isAnnotationPresent(Inject.class)).noneMatch(method1 -> method1.getName().equals(method.getName()) && Arrays.equals(method1.getParameterTypes(), method.getParameterTypes())))
+          .collect(Collectors.toList()));
+      current = current.getSuperclass();
+    }
+    Collections.reverse(injectMethods);
+    return injectMethods;
   }
 
   private static <Type> List<Field> getInjectFields(Class<Type> implementation) {
@@ -65,6 +85,10 @@ public class ConstructorInjectionProvider<T> implements ComponentProvider<T> {
       for (Field field : injectFields) {
         field.set(instance, context.get(field.getType()).get());
       }
+      for (Method method : injectMethods) {
+        method.invoke(instance, stream(method.getParameterTypes()).map(t -> context.get(t).get())
+            .toArray(Object[]::new));
+      }
       return instance;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new RuntimeException(e);
@@ -74,8 +98,10 @@ public class ConstructorInjectionProvider<T> implements ComponentProvider<T> {
   @Override
   public List<Class<?>> getDependencies() {
 
-    return Stream.concat(stream(injectConstructor.getParameters()).map(parameter -> parameter.getType()),
-        injectFields.stream().map(field -> field.getType())).collect(
-        Collectors.toList());
+    return concat(
+        concat(stream(injectConstructor.getParameters()).map(parameter -> parameter.getType()),
+            injectFields.stream().map(field -> field.getType())),
+        injectMethods.stream().flatMap(method -> stream(method.getParameterTypes())))
+        .collect(Collectors.toList());
   }
 }
