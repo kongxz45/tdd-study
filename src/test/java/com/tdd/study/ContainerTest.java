@@ -1,6 +1,6 @@
 package com.tdd.study;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,8 +12,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-public class ContainerTest {
+/**
+ * TODO need to add all three type of injection and exception cases by @ParameterizedTest vs @ValueSource
+ */
 
+public class ContainerTest {
 
   @Nested
   public class ComponentConstruction {
@@ -25,21 +28,23 @@ public class ContainerTest {
       config = new ContextConfig();
     }
 
-    @Test
-    public void should_bind_a_type_to_a_specified_instance() {
+    @Nested
+    class TypeBinding {
+      @Test
+      public void should_bind_a_type_to_a_specified_instance() {
+        Component instance = new Component() {
+        };
+        config.bind(Component.class, instance);
 
-      Component instance = new Component() {
-      };
-      config.bind(Component.class, instance);
+        assertSame(instance, config.getContext().get(Component.class).get());
 
-      assertSame(instance, config.getContext().get(Component.class).get());
+      }
 
-    }
-
-    @Test
-    public void should_return_empty_if_component_is_undefined() {
-      Optional<Component> optionalComponent = config.getContext().get(Component.class);
-      assertTrue(optionalComponent.isEmpty());
+      @Test
+      public void should_retrieve_empty_if_component_is_undefined() {
+        Optional<Component> optionalComponent = config.getContext().get(Component.class);
+        assertTrue(optionalComponent.isEmpty());
+      }
     }
 
     @Nested
@@ -95,20 +100,15 @@ public class ContainerTest {
 
   @Nested
   public class DependenciesSelection {
-
-
   }
 
   @Nested
   public class LifeCycleManagement {
-
-
   }
 
 }
 
 interface Component {
-
 }
 
 interface Dependency {
@@ -135,20 +135,6 @@ class ComponentWithInjectConstructor implements Component {
     return dependency;
   }
 
-}
-
-class DependencyWithInjectConstructor implements Dependency {
-
-  private String dependency;
-
-  @Inject
-  public DependencyWithInjectConstructor(String dependency) {
-    this.dependency = dependency;
-  }
-
-  public String getDependency() {
-    return dependency;
-  }
 }
 
 class ComponentWithMultiInjectConstructors implements Component {
@@ -190,16 +176,6 @@ class DependencyDependOnAnotherDependency implements Dependency {
 
 interface AnotherDependency {
 
-}
-
-class AnotherDependencyDependOnDependency implements AnotherDependency {
-
-  private Dependency dependency;
-
-  @Inject
-  public AnotherDependencyDependOnDependency(Dependency dependency) {
-    this.dependency = dependency;
-  }
 }
 
 class AnotherDependencyDependOnComponent implements AnotherDependency {

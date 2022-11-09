@@ -1,7 +1,6 @@
 package com.tdd.study;
 
 import static java.util.Arrays.stream;
-import static java.util.List.of;
 
 import jakarta.inject.Inject;
 import java.lang.reflect.Constructor;
@@ -18,17 +17,7 @@ public class ContextConfig {
   Map<Class<?>, ComponentProvider<?>> componentProviderMap = new HashMap<>();
 
   public <type> void bind(Class<type> type, type instance) {
-    componentProviderMap.put(type, new ComponentProvider() {
-      @Override
-      public Object get(Context context) {
-        return instance;
-      }
-
-      @Override
-      public List getDependencies() {
-        return of();
-      }
-    });
+    componentProviderMap.put(type, (ComponentProvider) context -> instance);
   }
 
   public <Type, Implementation extends Type> void bind(Class<Type> type,
