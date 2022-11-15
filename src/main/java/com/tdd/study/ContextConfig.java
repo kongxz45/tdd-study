@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
-import java.util.stream.Collectors;
 
 
 public class ContextConfig {
@@ -22,13 +21,13 @@ public class ContextConfig {
 
   public <Type, Implementation extends Type> void bind(Class<Type> type,
       Class<Implementation> implementation) {
-    List<Constructor> injectConstructors = stream(implementation.getConstructors())
+    List<Constructor<?>> injectConstructors = stream(implementation.getConstructors())
         .filter(constructor1 -> constructor1.isAnnotationPresent(
-            Inject.class)).collect(Collectors.toList());
+            Inject.class)).toList();
     if (injectConstructors.size() > 1) {
       throw new IllegalComponentException();
     }
-    componentProviderMap.put(type, new ConstructorInjectionProvider<>(implementation));
+    componentProviderMap.put(type, new InjectionProvider<>(implementation));
 
   }
 
