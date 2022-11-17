@@ -6,6 +6,7 @@ import static java.util.stream.Stream.concat;
 import jakarta.inject.Inject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,28 +44,30 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
   }
 
   private static <Type> List<Method> getInjectMethods(Class<Type> component) {
-    List<Method> injectMethods = new ArrayList<>();
-    Class<?> current = component;
-    while (current != Object.class) {
-      injectMethods.addAll(injectable(current.getDeclaredMethods())
-          .filter(method -> isOverrideByInjectMethod(injectMethods, method))
-          .filter(method -> isOverrideByNoInjectMethod(component, method))
-          .collect(Collectors.toList()));
-      current = current.getSuperclass();
-    }
+    List<Method> injectMethods = traverse(component, (methods, current) -> injectable(
+        current.getDeclaredMethods())
+            .filter(method -> isOverrideByInjectMethod(methods, method))
+            .filter(method -> isOverrideByNoInjectMethod(component, method))
+            .collect(Collectors.toList()));
     Collections.reverse(injectMethods);
     return injectMethods;
   }
 
 
   private static <Type> List<Field> getInjectFields(Class<Type> component) {
-    List<Field> injectFields = new ArrayList<>();
+    return traverse(component, (fields, current) -> injectable(
+        current.getDeclaredFields()).collect(Collectors.toList()));
+  }
+
+  private static <T> List<T> traverse(Class<?> component,
+      BiFunction<List<T>, Class<?>, List<T>> finder) {
+    List<T> members = new ArrayList<>();
     Class<?> current = component;
     while (current != Object.class) {
-      injectFields.addAll(injectable(current.getDeclaredFields()).collect(Collectors.toList()));
+      members.addAll(finder.apply(members, current));
       current = current.getSuperclass();
     }
-    return injectFields;
+    return members;
   }
 
   private static <Type> Constructor<Type> getInjectConstructor(Class<Type> component) {
@@ -78,18 +82,12 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
   @Override
   public T get(Context context) {
     try {
-      Object[] dependencies = stream(injectConstructor.getParameters())
-          .map(
-              parameter -> context.get(parameter.getType())
-                  .get())  // TODO： need to find out why .get() is needed
-          .toArray(Object[]::new);
-      T instance = injectConstructor.newInstance(dependencies);
+      T instance = injectConstructor.newInstance(toDependencies(context, injectConstructor));
       for (Field field : injectFields) {
-        field.set(instance, context.get(field.getType()).get());
+        field.set(instance, toDependency(context, field));
       }
       for (Method method : injectMethods) {
-        method.invoke(instance, stream(method.getParameterTypes()).map(t -> context.get(t).get())
-            .toArray(Object[]::new));
+        method.invoke(instance, toDependencies(context, method));
       }
       return instance;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -135,4 +133,13 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
     return injectMethods.stream().noneMatch(isOverride(method));
   }
 
+  private static Object[] toDependencies(Context context, Executable constructor) {
+    return stream(constructor.getParameterTypes())
+        .map(t1 -> context.get(t1).get())
+        .toArray(Object[]::new);
+  }
+
+  private static Object toDependency(Context context, Field field) {
+    return context.get(field.getType()).get();
+  }
 }
