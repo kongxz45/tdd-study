@@ -11,6 +11,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -133,13 +135,18 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
     return injectMethods.stream().noneMatch(isOverride(method));
   }
 
-  private static Object[] toDependencies(Context context, Executable constructor) {
-    return stream(constructor.getParameterTypes())
-        .map(t1 -> context.get(t1).get())
-        .toArray(Object[]::new);
+  private static Object[] toDependencies(Context context, Executable executable) {
+    return stream(executable.getParameters()).map(parameter -> {
+      Type type = parameter.getParameterizedType();
+      if (type instanceof ParameterizedType) return context.get((ParameterizedType) type).get();
+      return context.get((Class<?>) type).get();
+    }).toArray(Object[]::new);
+
   }
 
   private static Object toDependency(Context context, Field field) {
-    return context.get(field.getType()).get();
+    Type type = field.getGenericType();
+    if (type instanceof ParameterizedType) return context.get((ParameterizedType) type).get();
+    return context.get((Class<?>)field.getType()).get();
   }
 }

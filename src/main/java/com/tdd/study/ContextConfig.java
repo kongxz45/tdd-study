@@ -3,7 +3,9 @@ package com.tdd.study;
 import static java.util.Arrays.stream;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +40,15 @@ public class ContextConfig {
       public <Type> Optional<Type> get(Class<Type> type) {
         return Optional.ofNullable(componentProviderMap.get(type))
             .map(provider -> (Type) provider.get(this));
+      }
+
+      @Override
+      public <Type> Optional<Type> get(ParameterizedType type) {
+        if (type.getRawType() != Provider.class) return Optional.empty();
+        Class<?> componentType = (Class<?>)type.getActualTypeArguments()[0];
+        return (Optional<Type>) Optional.ofNullable(componentProviderMap.get(componentType))
+            .map(componentProvider -> (Provider<Type>) () -> (Type) componentProvider.get(this));
+
       }
     };
   }
