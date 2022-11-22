@@ -3,6 +3,7 @@ package com.tdd.study;
 import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
 
+import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Inject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;

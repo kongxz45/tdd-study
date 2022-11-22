@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.tdd.study.exception.CyclicDependenciesFoundException;
+import com.tdd.study.exception.DependencyNotFoundException;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.lang.reflect.ParameterizedType;
@@ -77,6 +79,21 @@ public class ContextTest {
 
   @Nested
   public class DependencyValidation {
+
+     static class ComponentWithInjectConstructor implements Component {
+
+      private Dependency dependency;
+
+      @Inject
+      public ComponentWithInjectConstructor(Dependency dependency) {
+        this.dependency = dependency;
+      }
+
+      public Dependency getDependency() {
+        return dependency;
+      }
+
+    }
 
     // transitive_dependency also included
     @Test

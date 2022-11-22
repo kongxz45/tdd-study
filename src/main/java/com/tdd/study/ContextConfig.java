@@ -2,6 +2,9 @@ package com.tdd.study;
 
 import static java.util.Arrays.stream;
 
+import com.tdd.study.exception.CyclicDependenciesFoundException;
+import com.tdd.study.exception.DependencyNotFoundException;
+import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.lang.reflect.Constructor;

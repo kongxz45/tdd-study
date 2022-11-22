@@ -1,4 +1,4 @@
-package com.tdd.study;
+package com.tdd.study.exception;
 
 public class DependencyNotFoundException extends RuntimeException {
 

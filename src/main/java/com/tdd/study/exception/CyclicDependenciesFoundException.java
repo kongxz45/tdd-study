@@ -1,8 +1,7 @@
-package com.tdd.study;
+package com.tdd.study.exception;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 public class CyclicDependenciesFoundException extends RuntimeException {
 

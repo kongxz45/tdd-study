@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.lang.reflect.ParameterizedType;
@@ -58,12 +59,27 @@ public class InjectionTest {
       }
 
 
+      static class ComponentInjectDependencyWithConstructor implements Component {
+
+        private Dependency dependency;
+
+        @Inject
+        public ComponentInjectDependencyWithConstructor(Dependency dependency) {
+          this.dependency = dependency;
+        }
+
+        public Dependency getDependency() {
+          return dependency;
+        }
+
+      }
+
       // transitive dependency also included
       @Test
       public void should_inject_dependency_with_inject_constructor() {
 
-        ComponentWithInjectConstructor instance = new InjectionProvider<>(
-            ComponentWithInjectConstructor.class).get(context);
+        ComponentInjectDependencyWithConstructor instance = new InjectionProvider<>(
+            ComponentInjectDependencyWithConstructor.class).get(context);
         assertNotNull(instance);
         assertSame(dependency, instance.getDependency());
       }
@@ -71,7 +87,7 @@ public class InjectionTest {
       @Test
       public void should_include_dependency_from_inject_constructor() {
         InjectionProvider provider = new InjectionProvider<>(
-            ComponentWithInjectConstructor.class);
+            ComponentInjectDependencyWithConstructor.class);
         assertArrayEquals(new Class<?>[]{Dependency.class},
             provider.getDependencies().toArray(Class<?>[]::new));
       }
