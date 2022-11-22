@@ -16,6 +16,9 @@ public class ContainerTest {
 }
 
 interface Component {
+  default Object getDependency() {
+    return null;
+  }
 }
 
 interface Dependency {

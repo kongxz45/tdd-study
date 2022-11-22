@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.tdd.study.ContextTest.TypeBinding.ConstructorInject;
+import com.tdd.study.ContextTest.TypeBinding.FieldInject;
+import com.tdd.study.ContextTest.TypeBinding.MethodInject;
 import com.tdd.study.exception.CyclicDependenciesFoundException;
 import com.tdd.study.exception.DependencyNotFoundException;
 import jakarta.inject.Inject;
@@ -13,9 +16,14 @@ import jakarta.inject.Provider;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @Nested
 public class ContextTest {
@@ -44,6 +52,105 @@ public class ContextTest {
     public void should_retrieve_empty_if_component_is_undefined() {
       Optional<Component> optionalComponent = config.getContext().get(Component.class);
       assertTrue(optionalComponent.isEmpty());
+    }
+
+
+
+    static class ConstructorInject implements Component {
+      @Inject
+      public ConstructorInject(Dependency dependency) {
+        this.dependency = dependency;
+      }
+
+      private final Dependency dependency;
+
+      @Override
+      public Dependency getDependency() {
+        return dependency;
+      }
+    }
+
+    static class FieldInject implements Component {
+      @Inject
+      Dependency dependency;
+
+      @Override
+      public Dependency getDependency() {
+        return dependency;
+      }
+    }
+
+    static class MethodInject implements Component {
+      Dependency dependency;
+
+      @Inject
+      public void setDependency(Dependency dependency) {
+        this.dependency = dependency;
+      }
+
+      @Override
+      public Dependency getDependency() {
+        return dependency;
+      }
+    }
+
+    static class ConstructorInjectProvider implements Component {
+      @Inject
+      public ConstructorInjectProvider(Provider<Dependency> dependency) {
+        this.dependency = dependency;
+      }
+
+      private final Provider<Dependency> dependency;
+
+      @Override
+      public Provider<Dependency> getDependency() {
+        return dependency;
+      }
+    }
+
+    static class FieldInjectProvider implements Component {
+      @Inject
+      Provider<Dependency> dependency;
+
+      @Override
+      public Provider<Dependency> getDependency() {
+        return dependency;
+      }
+    }
+
+    static class MethodInjectProvider implements Component {
+      Provider<Dependency> dependency;
+
+      @Inject
+      public void setDependency(Provider<Dependency> dependency) {
+        this.dependency = dependency;
+      }
+
+      @Override
+      public Provider<Dependency> getDependency() {
+        return dependency;
+      }
+    }
+
+    static Stream<Arguments> componentWithDependencyClassProvider() {
+      return Stream.of(Arguments.of(Named.of("Constructor Inject", ConstructorInject.class)),
+          Arguments.of(Named.of("Field Inject", FieldInject.class)),
+          Arguments.of(Named.of("Method Inject", MethodInject.class)));
+//          Arguments.of(Named.of("Constructor Inject Provider", ConstructorInjectProvider.class)),
+//          Arguments.of(Named.of("Field Inject Provider", FieldInjectProvider.class)),
+//          Arguments.of(Named.of("Method Inject Provider", MethodInjectProvider.class)));
+    }
+    @ParameterizedTest(name = "support {0}")
+    @MethodSource("componentWithDependencyClassProvider")
+    public void should_bind_type_to_an_injectable_component(Class<? extends Component> componentType) {
+      Dependency dependency = new Dependency() {
+      };
+      config.bind(Dependency.class, dependency);
+      config.bind(Component.class, componentType);
+
+      Optional<Component> instance = config.getContext().get(Component.class);
+
+      assertSame(dependency, instance.get().getDependency());
     }
 
     @Test
@@ -96,13 +203,24 @@ public class ContextTest {
     }
 
     // transitive_dependency also included
-    @Test
-    public void should_throw_exception_if_dependency_not_found() {
-      config.bind(Component.class, ComponentWithInjectConstructor.class);
+    static Stream<Arguments> componentMissDependencyClassProvider() {
+      return Stream.of(Arguments.of(Named.of("Constructor Inject", ConstructorInject.class)),
+          Arguments.of(Named.of("Field Inject", FieldInject.class)),
+          Arguments.of(Named.of("Method Inject", MethodInject.class)));
+//          Arguments.of(Named.of("Constructor Inject Provider", ConstructorInjectProvider.class)),
+//          Arguments.of(Named.of("Field Inject Provider", FieldInjectProvider.class)),
+//          Arguments.of(Named.of("Method Inject Provider", MethodInjectProvider.class)));
+    }
+    @ParameterizedTest
+    @MethodSource("componentMissDependencyClassProvider")
+    public void should_throw_exception_if_dependency_not_found(Class<? extends Component> componentType) {
+      config.bind(Component.class, componentType);
 
       DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class,
           () -> config.getContext());
+      assertEquals(Component.class, exception.getComponent());
       assertEquals(Dependency.class, exception.getDependency());
+
     }
 
     static class DependencyDependOnComponent implements Dependency {
