@@ -7,8 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tdd.study.ContextTest.TypeBinding.ConstructorInject;
+import com.tdd.study.ContextTest.TypeBinding.ConstructorInjectProvider;
 import com.tdd.study.ContextTest.TypeBinding.FieldInject;
+import com.tdd.study.ContextTest.TypeBinding.FieldInjectProvider;
 import com.tdd.study.ContextTest.TypeBinding.MethodInject;
+import com.tdd.study.ContextTest.TypeBinding.MethodInjectProvider;
 import com.tdd.study.exception.CyclicDependenciesFoundException;
 import com.tdd.study.exception.DependencyNotFoundException;
 import jakarta.inject.Inject;
@@ -140,7 +143,7 @@ public class ContextTest {
 //          Arguments.of(Named.of("Field Inject Provider", FieldInjectProvider.class)),
 //          Arguments.of(Named.of("Method Inject Provider", MethodInjectProvider.class)));
     }
-    @ParameterizedTest(name = "support {0}")
+    @ParameterizedTest
     @MethodSource("componentWithDependencyClassProvider")
     public void should_bind_type_to_an_injectable_component(Class<? extends Component> componentType) {
       Dependency dependency = new Dependency() {
@@ -206,10 +209,10 @@ public class ContextTest {
     static Stream<Arguments> componentMissDependencyClassProvider() {
       return Stream.of(Arguments.of(Named.of("Constructor Inject", ConstructorInject.class)),
           Arguments.of(Named.of("Field Inject", FieldInject.class)),
-          Arguments.of(Named.of("Method Inject", MethodInject.class)));
-//          Arguments.of(Named.of("Constructor Inject Provider", ConstructorInjectProvider.class)),
-//          Arguments.of(Named.of("Field Inject Provider", FieldInjectProvider.class)),
-//          Arguments.of(Named.of("Method Inject Provider", MethodInjectProvider.class)));
+          Arguments.of(Named.of("Method Inject", MethodInject.class)),
+          Arguments.of(Named.of("Constructor Inject Provider", ConstructorInjectProvider.class)),
+          Arguments.of(Named.of("Field Inject Provider", FieldInjectProvider.class)),
+          Arguments.of(Named.of("Method Inject Provider", MethodInjectProvider.class)));
     }
     @ParameterizedTest
     @MethodSource("componentMissDependencyClassProvider")
@@ -289,6 +292,23 @@ public class ContextTest {
       assertTrue(components.contains(Component.class));
       assertTrue(components.contains(AnotherDependency.class));
       assertTrue(components.contains(Dependency.class));
+
+    }
+
+    static class CyclicDependencyProviderConstructor implements Dependency {
+
+       @Inject
+      public CyclicDependencyProviderConstructor(Provider<Component> component) {
+      }
+    }
+
+    @Test
+    public void should_not_throw_exception_if_cyclic_dependency_via_provider() {
+       config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
+       config.bind(Component.class, ComponentWithInjectConstructor.class);
+
+       assertTrue(config.getContext().get(Component.class).isPresent());
+
 
     }
   }

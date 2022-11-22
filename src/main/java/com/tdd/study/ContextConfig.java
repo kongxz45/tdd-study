@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,18 +58,31 @@ public class ContextConfig {
   }
 
   private void checkDependencies(Class<?> component, Stack<Class<?>> visiting) {
-    for (Class<?> dependency : componentProviderMap.get(component).getDependencies()) {
-      if (!componentProviderMap.containsKey(dependency)) {
-        throw new DependencyNotFoundException(component, dependency);
+    for (Type dependency : componentProviderMap.get(component).getDependencyTypes()) {
+      if (dependency instanceof Class) {
+        extracted(component, visiting, (Class<?>) dependency);
       }
-      if (visiting.contains(dependency)) {
-        throw new CyclicDependenciesFoundException(visiting);
+      if (dependency instanceof ParameterizedType) {
+        Class<?> type = (Class<?>) ((ParameterizedType) dependency).getActualTypeArguments()[0];
+        if (!componentProviderMap.containsKey(type)) {
+          throw new DependencyNotFoundException(component, type);
+        }
       }
-      visiting.push(dependency);
-      checkDependencies(dependency, visiting);
-      visiting.pop();
+
     }
 
+  }
+
+  private void extracted(Class<?> component, Stack<Class<?>> visiting, Class<?> dependency) {
+    if (!componentProviderMap.containsKey(dependency)) {
+      throw new DependencyNotFoundException(component, dependency);
+    }
+    if (visiting.contains(dependency)) {
+      throw new CyclicDependenciesFoundException(visiting);
+    }
+    visiting.push(dependency);
+    checkDependencies(dependency, visiting);
+    visiting.pop();
   }
 
 }
