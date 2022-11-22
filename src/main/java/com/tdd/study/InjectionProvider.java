@@ -45,42 +45,6 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
     }
   }
 
-  private static <Type> List<Method> getInjectMethods(Class<Type> component) {
-    List<Method> injectMethods = traverse(component, (methods, current) -> injectable(
-        current.getDeclaredMethods())
-            .filter(method -> isOverrideByInjectMethod(methods, method))
-            .filter(method -> isOverrideByNoInjectMethod(component, method))
-            .collect(Collectors.toList()));
-    Collections.reverse(injectMethods);
-    return injectMethods;
-  }
-
-
-  private static <Type> List<Field> getInjectFields(Class<Type> component) {
-    return traverse(component, (fields, current) -> injectable(
-        current.getDeclaredFields()).collect(Collectors.toList()));
-  }
-
-  private static <T> List<T> traverse(Class<?> component,
-      BiFunction<List<T>, Class<?>, List<T>> finder) {
-    List<T> members = new ArrayList<>();
-    Class<?> current = component;
-    while (current != Object.class) {
-      members.addAll(finder.apply(members, current));
-      current = current.getSuperclass();
-    }
-    return members;
-  }
-
-  private static <Type> Constructor<Type> getInjectConstructor(Class<Type> component) {
-    List<Constructor> injectConstructors = injectable(component.getConstructors()).collect(Collectors.toList());
-    if (injectConstructors.size() > 1) {
-      throw new IllegalComponentException();
-    }
-    return (Constructor<Type>) injectConstructors.stream().findFirst()
-        .orElseGet(() -> getDefaultConstructor(component));
-  }
-
   @Override
   public T get(Context context) {
     try {
@@ -148,5 +112,41 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
     Type type = field.getGenericType();
     if (type instanceof ParameterizedType) return context.get((ParameterizedType) type).get();
     return context.get((Class<?>)field.getType()).get();
+  }
+
+  private static <Type> List<Method> getInjectMethods(Class<Type> component) {
+    List<Method> injectMethods = traverse(component, (methods, current) -> injectable(
+        current.getDeclaredMethods())
+        .filter(method -> isOverrideByInjectMethod(methods, method))
+        .filter(method -> isOverrideByNoInjectMethod(component, method))
+        .collect(Collectors.toList()));
+    Collections.reverse(injectMethods);
+    return injectMethods;
+  }
+
+
+  private static <Type> List<Field> getInjectFields(Class<Type> component) {
+    return traverse(component, (fields, current) -> injectable(
+        current.getDeclaredFields()).collect(Collectors.toList()));
+  }
+
+  private static <T> List<T> traverse(Class<?> component,
+      BiFunction<List<T>, Class<?>, List<T>> finder) {
+    List<T> members = new ArrayList<>();
+    Class<?> current = component;
+    while (current != Object.class) {
+      members.addAll(finder.apply(members, current));
+      current = current.getSuperclass();
+    }
+    return members;
+  }
+
+  private static <Type> Constructor<Type> getInjectConstructor(Class<Type> component) {
+    List<Constructor> injectConstructors = injectable(component.getConstructors()).collect(Collectors.toList());
+    if (injectConstructors.size() > 1) {
+      throw new IllegalComponentException();
+    }
+    return (Constructor<Type>) injectConstructors.stream().findFirst()
+        .orElseGet(() -> getDefaultConstructor(component));
   }
 }

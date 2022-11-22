@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
@@ -87,6 +88,16 @@ public class ContextTest {
       assertEquals(Dependency.class, exception.getDependency());
     }
 
+    static class DependencyDependOnComponent implements Dependency {
+
+      private Component component;
+
+      @Inject
+      public DependencyDependOnComponent(Component component) {
+        this.component = component;
+      }
+    }
+
     // A->B, B->A
     @Test
     public void should_throw_exception_if_cyclic_dependencies_found() {
@@ -102,6 +113,30 @@ public class ContextTest {
       assertTrue(components.contains(Component.class));
       assertTrue(components.contains(Dependency.class));
 
+    }
+
+    static class DependencyDependOnAnotherDependency implements Dependency {
+
+      private AnotherDependency anotherDependency;
+
+      @Inject
+      public DependencyDependOnAnotherDependency(AnotherDependency anotherDependency) {
+        this.anotherDependency = anotherDependency;
+      }
+    }
+
+    interface AnotherDependency {
+
+    }
+
+    static class AnotherDependencyDependOnComponent implements AnotherDependency {
+
+      private Component component;
+
+      @Inject
+      public AnotherDependencyDependOnComponent(Component component) {
+        this.component = component;
+      }
     }
 
     // A->B, B->C, C->A

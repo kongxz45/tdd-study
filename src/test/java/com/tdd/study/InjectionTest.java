@@ -42,7 +42,11 @@ public class InjectionTest {
     @Nested
     class Injection {
 
-      // default constructor
+      static class ComponentWithDefaultConstructor implements Component {
+
+        public ComponentWithDefaultConstructor() {
+        }
+      }
       @Test
       public void should_inject_dependency_with_default_constructor() {
         Component instance = new InjectionProvider<>(
@@ -95,11 +99,28 @@ public class InjectionTest {
     @Nested
     class IllegalConstructionInjection {
 
+
+      class ComponentWithMultiInjectConstructors implements Component {
+
+        @Inject
+        public ComponentWithMultiInjectConstructors(String name, Integer age) {
+        }
+
+        @Inject
+        public ComponentWithMultiInjectConstructors(String name) {
+        }
+      }
       @Test
       public void should_throw_exception_if_multi_inject_constructors_found() {
         assertThrows(IllegalComponentException.class,
             () -> new InjectionProvider<>(
                 ComponentWithMultiInjectConstructors.class));
+      }
+
+      static class ComponentWithNoInjectNorDefaultConstructor implements Component {
+
+        public ComponentWithNoInjectNorDefaultConstructor(String name) {
+        }
       }
 
       @Test
