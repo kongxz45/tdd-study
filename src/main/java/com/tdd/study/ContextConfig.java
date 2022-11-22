@@ -58,7 +58,7 @@ public class ContextConfig {
   }
 
   private void checkDependencies(Class<?> component, Stack<Class<?>> visiting) {
-    for (Type dependency : componentProviderMap.get(component).getDependencyTypes()) {
+    for (Type dependency : componentProviderMap.get(component).getDependencies()) {
       if (dependency instanceof Class) {
         extracted(component, visiting, (Class<?>) dependency);
       }

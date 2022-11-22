@@ -9,11 +9,7 @@ interface ComponentProvider<T> {
 
   T get(Context context);
 
-  default List<Class<?>> getDependencies() {
-    return of();
-  }
-
-  default List<Type> getDependencyTypes() {
+  default List<Type> getDependencies() {
     return of();
   }
 }
