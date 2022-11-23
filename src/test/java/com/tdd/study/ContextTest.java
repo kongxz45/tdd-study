@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.tdd.study.Context.Ref;
 import com.tdd.study.ContextTest.TypeBinding.ConstructorInject;
 import com.tdd.study.ContextTest.TypeBinding.ConstructorInjectProvider;
 import com.tdd.study.ContextTest.TypeBinding.FieldInject;
@@ -167,10 +168,7 @@ public class ContextTest {
       Component instance = new Component() {};
       config.bind(Component.class, instance);
 
-      ParameterizedType type = new TypeLiteral<Provider<Component>>() {}.getType();
-
-      Provider<Component> provider = (Provider<Component>) config.getContext().getType(Context.Ref.of(type))
-          .get();
+      Provider<Component> provider = config.getContext().getType(new Ref<Provider<Component>>() {}).get();
       assertSame(instance, provider.get());
 
     }
@@ -180,17 +178,9 @@ public class ContextTest {
       Component instance = new Component() {};
       config.bind(Component.class, instance);
 
-      ParameterizedType type = new TypeLiteral<List<Component>>() {}.getType();
-
-      assertFalse(config.getContext().getType(Context.Ref.of(type)).isPresent());
+      assertFalse(config.getContext().getType(new Ref<List<Component>>() {}).isPresent());
     }
 
-    // java范型的实现方式
-    static abstract class TypeLiteral<T> {
-      public ParameterizedType getType() {
-        return (ParameterizedType) ((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-      }
-    }
   }
 
   @Nested
