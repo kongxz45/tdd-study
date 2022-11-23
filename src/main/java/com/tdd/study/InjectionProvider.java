@@ -100,18 +100,16 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
   }
 
   private static Object[] toDependencies(Context context, Executable executable) {
-    return stream(executable.getParameters()).map(parameter -> {
-      Type type = parameter.getParameterizedType();
-      if (type instanceof ParameterizedType) return context.get((ParameterizedType) type).get();
-      return context.get((Class<?>) type).get();
-    }).toArray(Object[]::new);
+    return stream(executable.getParameters()).map(parameter -> toDependency(context, parameter.getParameterizedType())).toArray(Object[]::new);
 
   }
 
+  private static Object toDependency(Context context, Type type) {
+    return context.getType(type).get();
+  }
+
   private static Object toDependency(Context context, Field field) {
-    Type type = field.getGenericType();
-    if (type instanceof ParameterizedType) return context.get((ParameterizedType) type).get();
-    return context.get((Class<?>)field.getType()).get();
+    return toDependency(context, field.getGenericType());
   }
 
   private static <Type> List<Method> getInjectMethods(Class<Type> component) {

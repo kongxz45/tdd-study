@@ -47,13 +47,13 @@ public class ContextTest {
       };
       config.bind(Component.class, instance);
 
-      assertSame(instance, config.getContext().get(Component.class).get());
+      assertSame(instance, config.getContext().getType(Component.class).get());
 
     }
 
     @Test
     public void should_retrieve_empty_if_component_is_undefined() {
-      Optional<Component> optionalComponent = config.getContext().get(Component.class);
+      Optional<Component> optionalComponent = config.getContext().getType(Component.class);
       assertTrue(optionalComponent.isEmpty());
     }
 
@@ -151,7 +151,7 @@ public class ContextTest {
       config.bind(Dependency.class, dependency);
       config.bind(Component.class, componentType);
 
-      Optional<Component> instance = config.getContext().get(Component.class);
+      Optional<Component> instance = config.getContext().getType(Component.class);
 
       assertSame(dependency, instance.get().getDependency());
     }
@@ -163,7 +163,7 @@ public class ContextTest {
 
       ParameterizedType type = new TypeLiteral<Provider<Component>>() {}.getType();
 
-      Provider<Component> provider = (Provider<Component>) config.getContext().get(type)
+      Provider<Component> provider = (Provider<Component>) config.getContext().getType(type)
           .get();
       assertSame(instance, provider.get());
 
@@ -176,7 +176,7 @@ public class ContextTest {
 
       ParameterizedType type = new TypeLiteral<List<Component>>() {}.getType();
 
-      assertFalse(config.getContext().get(type).isPresent());
+      assertFalse(config.getContext().getType(type).isPresent());
     }
 
     // java范型的实现方式
@@ -307,7 +307,7 @@ public class ContextTest {
        config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
        config.bind(Component.class, ComponentWithInjectConstructor.class);
 
-       assertTrue(config.getContext().get(Component.class).isPresent());
+       assertTrue(config.getContext().getType(Component.class).isPresent());
 
 
     }
