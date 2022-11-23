@@ -13,7 +13,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,11 +63,12 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
   }
 
   @Override
-  public List<Type> getDependencies() {
-    return concat(concat(stream(injectConstructor.getParameters()).map(parameter -> parameter.getParameterizedType()),
-        injectFields.stream().map(field -> field.getGenericType())),
+  public List<Context.Ref> getDependencies() {
+    return concat(concat(stream(injectConstructor.getParameters()).map(
+                parameter -> parameter.getParameterizedType()),
+            injectFields.stream().map(field -> field.getGenericType())),
         injectMethods.stream().flatMap(method -> stream(method.getParameters()).map(
-            Parameter::getParameterizedType))).toList();
+            Parameter::getParameterizedType))).map(type -> Context.Ref.of(type)).toList();
   }
 
   private static <T extends AnnotatedElement> Stream<T> injectable(T[] declaredMethods) {
@@ -105,7 +105,7 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
   }
 
   private static Object toDependency(Context context, Type type) {
-    return context.getType(type).get();
+    return context.getType(Context.Ref.of(type)).get();
   }
 
   private static Object toDependency(Context context, Field field) {

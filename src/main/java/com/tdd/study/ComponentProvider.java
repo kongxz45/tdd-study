@@ -2,14 +2,13 @@ package com.tdd.study;
 
 import static java.util.List.of;
 
-import java.lang.reflect.Type;
 import java.util.List;
 
 interface ComponentProvider<T> {
 
   T get(Context context);
 
-  default List<Type> getDependencies() {
+  default List<Context.Ref> getDependencies() {
     return of();
-  }
+  };
 }
