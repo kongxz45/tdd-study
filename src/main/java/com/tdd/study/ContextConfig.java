@@ -7,7 +7,9 @@ import com.tdd.study.exception.DependencyNotFoundException;
 import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,20 +21,33 @@ public class ContextConfig {
 
   Map<Class<?>, ComponentProvider<?>> componentProviderMap = new HashMap<>();
 
-  public <type> void bind(Class<type> type, type instance) {
+  Map<Component, ComponentProvider<?>> components = new HashMap<>();
+
+  record Component(Class<?> type, Annotation qualifier) {}
+
+  public <T> void bind(Class<T> type, T instance) {
     componentProviderMap.put(type, (ComponentProvider) context -> instance);
+  }
+
+  public <T> void bind(Class<T> type, T instance, Annotation qualifier) {
+    components.put(new Component(type, qualifier), context -> instance);
   }
 
   public <Type, Implementation extends Type> void bind(Class<Type> type,
       Class<Implementation> implementation) {
-    List<Constructor<?>> injectConstructors = stream(implementation.getConstructors())
-        .filter(constructor1 -> constructor1.isAnnotationPresent(
-            Inject.class)).toList();
-    if (injectConstructors.size() > 1) {
-      throw new IllegalComponentException();
-    }
+//    List<Constructor<?>> injectConstructors = stream(implementation.getConstructors())
+//        .filter(constructor1 -> constructor1.isAnnotationPresent(
+//            Inject.class)).toList();
+//    if (injectConstructors.size() > 1) {
+//      throw new IllegalComponentException();
+//    }
     componentProviderMap.put(type, new InjectionProvider<>(implementation));
 
+  }
+
+  public <Type, Implementation extends Type> void bind(Class<Type> type,
+      Class<Implementation> implementation, Annotation qualifier) {
+    components.put(new Component(type, qualifier), new InjectionProvider<>(implementation));
   }
 
   public Context getContext() {
@@ -40,16 +55,20 @@ public class ContextConfig {
     return new Context() {
 
       @Override
-      public Optional getType(Ref ref) {
+      public <T> Optional<T> get(Ref<T> ref) {
+        if (ref.getQualifier() != null) {
+          return Optional.ofNullable(components.get(new Component(ref.getComponentType(), ref.getQualifier())))
+              .map(provider -> (T) provider.get(this));
+        }
         if (ref.isContainer()) {
           if (ref.getContainerType() != Provider.class) return Optional.empty();
 
-          return Optional.ofNullable(componentProviderMap.get(ref.getComponentType()))
+          return (Optional<T>) Optional.ofNullable(componentProviderMap.get(ref.getComponentType()))
               .map(componentProvider -> (Provider<Object>) () -> (Object) componentProvider.get(this));
 
         }
         return Optional.ofNullable(componentProviderMap.get(ref.getComponentType()))
-            .map(provider -> (Object) provider.get(this));
+            .map(provider -> (T) provider.get(this));
       }
     };
   }

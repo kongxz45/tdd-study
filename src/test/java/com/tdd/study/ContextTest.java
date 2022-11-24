@@ -17,7 +17,7 @@ import com.tdd.study.exception.CyclicDependenciesFoundException;
 import com.tdd.study.exception.DependencyNotFoundException;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
-import java.lang.reflect.ParameterizedType;
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -48,13 +48,13 @@ public class ContextTest {
       };
       config.bind(Component.class, instance);
 
-      assertSame(instance, config.getContext().getType(Context.Ref.of(Component.class)).get());
+      assertSame(instance, config.getContext().get(Context.Ref.of(Component.class)).get());
 
     }
 
     @Test
     public void should_retrieve_empty_if_component_is_undefined() {
-      Optional<Component> optionalComponent = config.getContext().getType(Context.Ref.of(Component.class));
+      Optional<Component> optionalComponent = config.getContext().get(Context.Ref.of(Component.class));
       assertTrue(optionalComponent.isEmpty());
     }
 
@@ -152,7 +152,7 @@ public class ContextTest {
       config.bind(Dependency.class, dependency);
       config.bind(Component.class, componentType);
 
-      Optional<Component> instance = config.getContext().getType(Context.Ref.of(Component.class));
+      Optional<Component> instance = config.getContext().get(Context.Ref.of(Component.class));
 
       assertTrue(instance.isPresent());
       Object dependencyObj = instance.get().getDependency();
@@ -168,7 +168,7 @@ public class ContextTest {
       Component instance = new Component() {};
       config.bind(Component.class, instance);
 
-      Provider<Component> provider = config.getContext().getType(new Ref<Provider<Component>>() {}).get();
+      Provider<Component> provider = config.getContext().get(new Ref<Provider<Component>>() {}).get();
       assertSame(instance, provider.get());
 
     }
@@ -178,7 +178,7 @@ public class ContextTest {
       Component instance = new Component() {};
       config.bind(Component.class, instance);
 
-      assertFalse(config.getContext().getType(new Ref<List<Component>>() {}).isPresent());
+      assertFalse(config.getContext().get(new Ref<List<Component>>() {}).isPresent());
     }
 
   }
@@ -303,10 +303,54 @@ public class ContextTest {
        config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
        config.bind(Component.class, ComponentWithInjectConstructor.class);
 
-       assertTrue(config.getContext().getType(Context.Ref.of(Component.class)).isPresent());
+       assertTrue(config.getContext().get(Context.Ref.of(Component.class)).isPresent());
 
 
     }
   }
+
+  @Nested
+  public class WithQualifier {
+    //TODO binding component with qualifier
+    @Test
+    public void should_bind_instance_with_qualifier() {
+      Component instance = new Component() {
+      };
+
+      config.bind(Component.class, instance, new NamedLiteral("ChosenOne"));
+      Context context = config.getContext();
+      Component chosenOne = context.get(Ref.of(Component.class, new NamedLiteral("ChosenOne")))
+          .get();
+
+      assertSame(instance, chosenOne);
+
+    }
+
+    @Test
+    public void should_bind_component_with_qualifier() {
+      Dependency dependency = new Dependency() {
+      };
+      config.bind(Dependency.class, dependency);
+      config.bind(ConstructorInject.class, ConstructorInject.class, new NamedLiteral("ChosenOne"));
+
+      Context context = config.getContext();
+      ConstructorInject chosenOne = context.get(Ref.of(ConstructorInject.class, new NamedLiteral("ChosenOne")))
+          .get();
+
+      assertSame(dependency, chosenOne.getDependency());
+    }
+    //TODO binding component with multi qualifier
+    //TODO throw illegal component if illegal qualifier
+
+    record NamedLiteral(String value) implements jakarta.inject.Named {
+
+      @Override
+      public Class<? extends Annotation> annotationType() {
+        return jakarta.inject.Named.class;
+      }
+    }
+  }
+
+
 
 }

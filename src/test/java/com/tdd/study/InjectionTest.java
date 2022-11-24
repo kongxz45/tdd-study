@@ -34,8 +34,8 @@ public class InjectionTest {
   public void setUp() throws NoSuchFieldException {
     dependencyProviderType = (ParameterizedType)InjectionTest.class.getDeclaredField("dependencyProvider")
         .getGenericType();
-    when(context.getType(eq(Context.Ref.of(Dependency.class)))).thenReturn(Optional.of(dependency));
-    when(context.getType(eq(Context.Ref.of(dependencyProviderType)))).thenReturn(Optional.of(dependencyProvider));
+    when(context.get(eq(Context.Ref.of(Dependency.class)))).thenReturn(Optional.of(dependency));
+    when(context.get(eq(Context.Ref.of(dependencyProviderType)))).thenReturn(Optional.of(dependencyProvider));
   }
 
 
