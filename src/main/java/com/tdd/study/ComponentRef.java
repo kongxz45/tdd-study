@@ -6,9 +6,6 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 
 public class ComponentRef<T> {
-
-  private Annotation qualifier;
-
   private Component component;
 
   private Type containerType;
@@ -30,7 +27,6 @@ public class ComponentRef<T> {
   }
 
   public ComponentRef(Class<T> componentType, Annotation qualifier) {
-    this.qualifier = qualifier;
     init(componentType, qualifier);
   }
 
@@ -72,10 +68,6 @@ public class ComponentRef<T> {
     return containerType;
   }
 
-  public Annotation getQualifier() {
-    return qualifier;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -85,12 +77,12 @@ public class ComponentRef<T> {
       return false;
     }
     ComponentRef<?> that = (ComponentRef<?>) o;
-    return Objects.equals(qualifier, that.qualifier) && component.equals(that.component)
-        && Objects.equals(containerType, that.containerType);
+    return component.equals(that.component) && Objects.equals(containerType,
+        that.containerType);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(qualifier, component);
+    return Objects.hash(component, containerType);
   }
 }
