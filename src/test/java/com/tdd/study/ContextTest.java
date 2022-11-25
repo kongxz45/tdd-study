@@ -1,6 +1,7 @@
 package com.tdd.study;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -391,6 +392,11 @@ public class ContextTest {
         if (o instanceof jakarta.inject.Named named) return Objects.equals(value, named.value());
         return false;
       }
+
+      @Override
+      public int hashCode() {
+        return "value".hashCode() * 127 ^ value.hashCode();
+      }
     }
 
     @java.lang.annotation.Documented
@@ -427,6 +433,34 @@ public class ContextTest {
       assertEquals(new Component(InjectConstructorWithQualifier.class, new NamedLiteral("owner")), exception.getComponent());
     }
 
+    static class SkywalkerDependency implements Dependency {
+
+      @Inject
+      public SkywalkerDependency(@jakarta.inject.Named("ChosenOne") Dependency dependency) {
+      }
+    }
+
+    static class NotCyclicDependency implements Dependency {
+
+      @Inject
+      public NotCyclicDependency(@Skywalker Dependency dependency) {
+      }
+    }
+
+    // A -> @Skywalker -> @Named A (instance)
+    @Test
+    public void should_not_throw_cyclic_exception_if_component_with_same_type_tagged_with_different_qualifier() {
+      Dependency instance = new Dependency() {
+      };
+
+      config.bind(Dependency.class, instance, new NamedLiteral("ChosenOne"));
+      config.bind(Dependency.class, SkywalkerDependency.class, new SkywalkerLiteral());
+      config.bind(Dependency.class, NotCyclicDependency.class);
+
+      assertDoesNotThrow(() -> config.getContext());
+
+    }
+
 
     static class InjectConstructorWithQualifier {
 
@@ -434,15 +468,19 @@ public class ContextTest {
       public InjectConstructorWithQualifier(@Skywalker Dependency dependency) {
       }
     }
-  }
 
-  record TestLiteral() implements Test {
+    record TestLiteral() implements Test {
 
-    @Override
-    public Class<? extends Annotation> annotationType() {
-      return Test.class;
+      @Override
+      public Class<? extends Annotation> annotationType() {
+        return Test.class;
+      }
     }
+
+
   }
+
+
 
 
 }

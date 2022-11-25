@@ -1,26 +1,19 @@
 package com.tdd.study.exception;
 
+import com.tdd.study.Component;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CyclicDependenciesFoundException extends RuntimeException {
 
-  private List<Class<?>> components = new ArrayList<>();
+  private List<Component> components = new ArrayList<>();
 
-  public CyclicDependenciesFoundException(Class<?> component) {
-    this.components.add(component);
-  }
-
-  public CyclicDependenciesFoundException(Class<?> componentType, CyclicDependenciesFoundException e) {
-    this.components.add(componentType);
-    this.components.addAll(e.getComponents());
-  }
-
-  public CyclicDependenciesFoundException(List<Class<?>> visiting) {
+  public CyclicDependenciesFoundException(List<Component> visiting) {
     this.components.addAll(visiting);
   }
 
   public List<Class<?>> getComponents() {
-    return components;
+    return components.stream().map(component -> component.type()).collect(Collectors.toList());
   }
 }
