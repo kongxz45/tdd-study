@@ -143,6 +143,7 @@ public class ContextTest {
           Arguments.of(Named.of("Constructor Inject Provider", ConstructorInjectProvider.class)),
           Arguments.of(Named.of("Field Inject Provider", FieldInjectProvider.class)),
           Arguments.of(Named.of("Method Inject Provider", MethodInjectProvider.class)));
+
     }
     @ParameterizedTest
     @MethodSource("componentWithDependencyClassProvider")
