@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 
 public class ComponentRef<T> {
+
   private Component component;
 
   private Type containerType;
@@ -43,7 +44,8 @@ public class ComponentRef<T> {
   private void init(Type type, Annotation qualifier) {
     if (type instanceof ParameterizedType) {
       this.containerType = ((ParameterizedType) type).getRawType();
-      this.component = new Component((Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0], qualifier);
+      this.component = new Component(
+          (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0], qualifier);
     } else {
       this.component = new Component((Class<?>) type, qualifier);
     }

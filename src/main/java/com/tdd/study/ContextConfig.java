@@ -2,8 +2,11 @@ package com.tdd.study;
 
 import com.tdd.study.exception.CyclicDependenciesFoundException;
 import com.tdd.study.exception.DependencyNotFoundException;
+import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +22,8 @@ public class ContextConfig {
   }
 
   public <T> void bind(Class<T> type, T instance, Annotation... qualifiers) {
+    if (Arrays.stream(qualifiers).anyMatch(q -> !q.annotationType().isAnnotationPresent(Qualifier.class)))
+      throw new IllegalComponentException();
     for (Annotation qualifier : qualifiers)
       components.put(new Component(type, qualifier), context -> instance);
   }
