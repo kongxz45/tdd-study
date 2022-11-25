@@ -273,6 +273,20 @@ public class InjectionTest {
       }
 
       //TODO inject with qualifier
+      @Test
+      public void should_include_dependency_with_qualifier() {
+        InjectionProvider<InjectFieldWithQualifier> provider = new InjectionProvider<>(
+            InjectFieldWithQualifier.class);
+        assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray() );
+
+      }
+
+      static class InjectFieldWithQualifier {
+
+        @Inject
+        @Named("ChosenOne")
+        private Dependency dependency;
+      }
       //TODO include qualifier with dependency
 
     }
@@ -447,6 +461,20 @@ public class InjectionTest {
       }
 
       //TODO inject with qualifier
+      @Test
+      public void should_include_dependency_with_qualifier() {
+        InjectionProvider<InjectMethodWithQualifier> provider = new InjectionProvider<>(
+            InjectMethodWithQualifier.class);
+        assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray() );
+
+      }
+
+      static class InjectMethodWithQualifier {
+
+        @Inject
+        void install(@Named("ChosenOne") Dependency dependency) {
+        }
+      }
       //TODO include qualifier with dependency
     }
 
