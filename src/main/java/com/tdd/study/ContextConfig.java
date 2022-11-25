@@ -1,17 +1,10 @@
 package com.tdd.study;
 
-import static java.util.Arrays.stream;
-
 import com.tdd.study.exception.CyclicDependenciesFoundException;
 import com.tdd.study.exception.DependencyNotFoundException;
-import com.tdd.study.exception.IllegalComponentException;
-import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
@@ -29,25 +22,21 @@ public class ContextConfig {
     componentProviderMap.put(type, (ComponentProvider) context -> instance);
   }
 
-  public <T> void bind(Class<T> type, T instance, Annotation qualifier) {
-    components.put(new Component(type, qualifier), context -> instance);
+  public <T> void bind(Class<T> type, T instance, Annotation... qualifiers) {
+    for (Annotation qualifier : qualifiers)
+      components.put(new Component(type, qualifier), context -> instance);
   }
 
   public <Type, Implementation extends Type> void bind(Class<Type> type,
       Class<Implementation> implementation) {
-//    List<Constructor<?>> injectConstructors = stream(implementation.getConstructors())
-//        .filter(constructor1 -> constructor1.isAnnotationPresent(
-//            Inject.class)).toList();
-//    if (injectConstructors.size() > 1) {
-//      throw new IllegalComponentException();
-//    }
     componentProviderMap.put(type, new InjectionProvider<>(implementation));
 
   }
 
   public <Type, Implementation extends Type> void bind(Class<Type> type,
-      Class<Implementation> implementation, Annotation qualifier) {
-    components.put(new Component(type, qualifier), new InjectionProvider<>(implementation));
+      Class<Implementation> implementation, Annotation... qualifiers) {
+    for (Annotation qualifier : qualifiers)
+      components.put(new Component(type, qualifier), new InjectionProvider<>(implementation));
   }
 
   public Context getContext() {

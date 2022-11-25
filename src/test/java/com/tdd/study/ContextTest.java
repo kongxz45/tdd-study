@@ -311,7 +311,6 @@ public class ContextTest {
 
   @Nested
   public class WithQualifier {
-    //TODO binding component with qualifier
     @Test
     public void should_bind_instance_with_qualifier() {
       Component instance = new Component() {
@@ -339,7 +338,39 @@ public class ContextTest {
 
       assertSame(dependency, chosenOne.getDependency());
     }
-    //TODO binding component with multi qualifier
+
+    @Test
+    public void should_bind_instance_with_multi_qualifier() {
+      Component instance = new Component() {
+      };
+
+      config.bind(Component.class, instance, new NamedLiteral("ChosenOne"), new NamedLiteral("ChosenTwo"));
+      Context context = config.getContext();
+      Component chosenOne = context.get(Ref.of(Component.class, new NamedLiteral("ChosenOne")))
+          .get();
+      Component chosenTwo = context.get(Ref.of(Component.class, new NamedLiteral("ChosenTwo")))
+          .get();
+
+      assertSame(instance, chosenOne);
+      assertSame(instance, chosenTwo);
+
+    }
+    @Test
+    public void should_bind_component_with_multi_qualifier() {
+      Dependency dependency = new Dependency() {
+      };
+      config.bind(Dependency.class, dependency);
+      config.bind(ConstructorInject.class, ConstructorInject.class, new NamedLiteral("ChosenOne"), new NamedLiteral("ChosenTwo"));
+
+      Context context = config.getContext();
+      ConstructorInject chosenOne = context.get(Ref.of(ConstructorInject.class, new NamedLiteral("ChosenOne")))
+          .get();
+      ConstructorInject chosenTwo = context.get(
+              Ref.of(ConstructorInject.class, new NamedLiteral("ChosenTwo")))
+          .get();
+
+      assertSame(chosenTwo.getDependency(), chosenOne.getDependency());
+    }
     //TODO throw illegal component if illegal qualifier
 
     record NamedLiteral(String value) implements jakarta.inject.Named {
