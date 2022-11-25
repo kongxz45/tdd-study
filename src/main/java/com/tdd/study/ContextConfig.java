@@ -14,8 +14,6 @@ public class ContextConfig {
 
   Map<Component, ComponentProvider<?>> components = new HashMap<>();
 
-  record Component(Class<?> type, Annotation qualifier) {}
-
   public <T> void bind(Class<T> type, T instance) {
     components.put(new Component(type, null), context -> instance);
   }
@@ -42,7 +40,7 @@ public class ContextConfig {
     return new Context() {
 
       @Override
-      public <T> Optional<T> get(Ref<T> ref) {
+      public <T> Optional<T> get(ComponentRef<T> ref) {
         if (ref.isContainer()) {
           if (ref.getContainerType() != Provider.class) return Optional.empty();
 
@@ -52,23 +50,23 @@ public class ContextConfig {
 
         }
         return Optional.ofNullable(
-                components.get(new Component(ref.getComponentType(), ref.getQualifier())))
+                components.get(ref.component()))
             .map(provider -> (T) provider.get(this));
       }
     };
   }
 
   private void checkDependencies(Component component, Stack<Class<?>> visiting) {
-    for (Context.Ref dependency : components.get(component).getDependencies()) {
-      if (!components.containsKey(new Component(dependency.getComponentType(), dependency.getQualifier()))) {
-        throw new DependencyNotFoundException(component.type, dependency.getComponentType());
+    for (ComponentRef dependency : components.get(component).getDependencies()) {
+      if (!components.containsKey(dependency.component())) {
+        throw new DependencyNotFoundException(component.type(), dependency.getComponentType());
       }
       if (!dependency.isContainer()) {
         if (visiting.contains(dependency.getComponentType())) {
           throw new CyclicDependenciesFoundException(visiting);
         }
         visiting.push(dependency.getComponentType());
-        checkDependencies(new Component(dependency.getComponentType(),dependency.getQualifier()), visiting);
+        checkDependencies(dependency.component(), visiting);
         visiting.pop();
       }
 

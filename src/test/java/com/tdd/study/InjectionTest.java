@@ -34,8 +34,8 @@ public class InjectionTest {
   public void setUp() throws NoSuchFieldException {
     dependencyProviderType = (ParameterizedType)InjectionTest.class.getDeclaredField("dependencyProvider")
         .getGenericType();
-    when(context.get(eq(Context.Ref.of(Dependency.class)))).thenReturn(Optional.of(dependency));
-    when(context.get(eq(Context.Ref.of(dependencyProviderType)))).thenReturn(Optional.of(dependencyProvider));
+    when(context.get(eq(ComponentRef.of(Dependency.class)))).thenReturn(Optional.of(dependency));
+    when(context.get(eq(ComponentRef.of(dependencyProviderType)))).thenReturn(Optional.of(dependencyProvider));
   }
 
 
@@ -45,14 +45,14 @@ public class InjectionTest {
     @Nested
     class Injection {
 
-      static class ComponentWithDefaultConstructor implements Component {
+      static class ComponentWithDefaultConstructor implements TestComponent {
 
         public ComponentWithDefaultConstructor() {
         }
       }
       @Test
       public void should_inject_dependency_with_default_constructor() {
-        Component instance = new InjectionProvider<>(
+        TestComponent instance = new InjectionProvider<>(
             ComponentWithDefaultConstructor.class).get(context);
 
         assertNotNull(instance);
@@ -61,7 +61,7 @@ public class InjectionTest {
       }
 
 
-      static class ComponentInjectDependencyWithConstructor implements Component {
+      static class ComponentInjectDependencyWithConstructor implements TestComponent {
 
         private Dependency dependency;
 
@@ -90,8 +90,8 @@ public class InjectionTest {
       public void should_include_dependency_from_inject_constructor() {
         InjectionProvider provider = new InjectionProvider<>(
             ComponentInjectDependencyWithConstructor.class);
-        assertArrayEquals(new Context.Ref[]{Context.Ref.of(Dependency.class)},
-            provider.getDependencies().toArray(Context.Ref[]::new));
+        assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class)},
+            provider.getDependencies().toArray(ComponentRef[]::new));
       }
 
 
@@ -119,8 +119,8 @@ public class InjectionTest {
         InjectionProvider<ProviderInjectConstructor> provider = new InjectionProvider<>(
             ProviderInjectConstructor.class);
 
-        assertArrayEquals(new Context.Ref[] {Context.Ref.of(dependencyProviderType)}, provider.getDependencies().toArray(
-            Context.Ref[]::new));
+        assertArrayEquals(new ComponentRef[] {ComponentRef.of(dependencyProviderType)}, provider.getDependencies().toArray(
+            ComponentRef[]::new));
       }
 
     }
@@ -129,7 +129,7 @@ public class InjectionTest {
     class IllegalConstructionInjection {
 
 
-      class ComponentWithMultiInjectConstructors implements Component {
+      class ComponentWithMultiInjectConstructors implements TestComponent {
 
         @Inject
         public ComponentWithMultiInjectConstructors(String name, Integer age) {
@@ -146,7 +146,7 @@ public class InjectionTest {
                 ComponentWithMultiInjectConstructors.class));
       }
 
-      static class ComponentWithNoInjectNorDefaultConstructor implements Component {
+      static class ComponentWithNoInjectNorDefaultConstructor implements TestComponent {
 
         public ComponentWithNoInjectNorDefaultConstructor(String name) {
         }
@@ -160,7 +160,7 @@ public class InjectionTest {
 
       }
 
-      static abstract class AbstractComponent implements Component {
+      static abstract class AbstractComponent implements TestComponent {
 
         @Inject
         public AbstractComponent() {
@@ -179,7 +179,7 @@ public class InjectionTest {
       @Test
       public void should_throw_exception_if_component_is_interface() {
         assertThrows(IllegalComponentException.class, () -> new InjectionProvider<>(
-            Component.class));
+            TestComponent.class));
 
       }
     }
@@ -216,8 +216,8 @@ public class InjectionTest {
       public void should_include_field_dependency_in_dependencies() {
         InjectionProvider<ComponentWithFieldInjection> provider = new InjectionProvider<>(
             ComponentWithFieldInjection.class);
-        assertArrayEquals(new Context.Ref[]{Context.Ref.of(Dependency.class)},
-            provider.getDependencies().toArray(Context.Ref[]::new));
+        assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class)},
+            provider.getDependencies().toArray(ComponentRef[]::new));
       }
 
       @Test
@@ -248,8 +248,8 @@ public class InjectionTest {
         InjectionProvider<ProviderInjectField> provider = new InjectionProvider<>(
             ProviderInjectField.class);
 
-        assertArrayEquals(new Context.Ref[] {Context.Ref.of(dependencyProviderType)}, provider.getDependencies().toArray(
-            Context.Ref[]::new));
+        assertArrayEquals(new ComponentRef[] {ComponentRef.of(dependencyProviderType)}, provider.getDependencies().toArray(
+            ComponentRef[]::new));
       }
 
     }
@@ -326,8 +326,8 @@ public class InjectionTest {
         InjectionProvider<InjectMethodWithDependency> provider = new InjectionProvider<>(
             InjectMethodWithDependency.class);
 
-        assertArrayEquals(new Context.Ref[]{Context.Ref.of(Dependency.class)},
-            provider.getDependencies().toArray(Context.Ref[]::new));
+        assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class)},
+            provider.getDependencies().toArray(ComponentRef[]::new));
       }
 
       //override inject method from superclass
@@ -409,8 +409,8 @@ public class InjectionTest {
         InjectionProvider<ProviderInjectMethod> provider = new InjectionProvider<>(
             ProviderInjectMethod.class);
 
-        assertArrayEquals(new Context.Ref[]{Context.Ref.of(dependencyProviderType)}, provider.getDependencies().toArray(
-            Context.Ref[]::new));
+        assertArrayEquals(new ComponentRef[]{ComponentRef.of(dependencyProviderType)}, provider.getDependencies().toArray(
+            ComponentRef[]::new));
       }
 
       static class ProviderInjectMethod {

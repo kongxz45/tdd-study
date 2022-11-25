@@ -63,12 +63,12 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
   }
 
   @Override
-  public List<Context.Ref> getDependencies() {
+  public List<ComponentRef> getDependencies() {
     return concat(concat(stream(injectConstructor.getParameters()).map(
                 parameter -> parameter.getParameterizedType()),
             injectFields.stream().map(field -> field.getGenericType())),
         injectMethods.stream().flatMap(method -> stream(method.getParameters()).map(
-            Parameter::getParameterizedType))).map(type -> Context.Ref.of(type)).toList();
+            Parameter::getParameterizedType))).map(type -> ComponentRef.of(type)).toList();
   }
 
   private static <T extends AnnotatedElement> Stream<T> injectable(T[] declaredMethods) {
@@ -105,7 +105,7 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
   }
 
   private static Object toDependency(Context context, Type type) {
-    return context.get(Context.Ref.of(type)).get();
+    return context.get(ComponentRef.of(type)).get();
   }
 
   private static Object toDependency(Context context, Field field) {
