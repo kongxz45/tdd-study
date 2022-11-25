@@ -132,7 +132,6 @@ public class InjectionTest {
         InjectionProvider<InjectConstructorWithQualifier> provider = new InjectionProvider<>(
             InjectConstructorWithQualifier.class);
         assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray() );
-        assertEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray() );
 
 
       }

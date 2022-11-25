@@ -13,7 +13,6 @@ import com.tdd.study.ContextTest.TypeBinding.FieldInject;
 import com.tdd.study.ContextTest.TypeBinding.FieldInjectProvider;
 import com.tdd.study.ContextTest.TypeBinding.MethodInject;
 import com.tdd.study.ContextTest.TypeBinding.MethodInjectProvider;
-import com.tdd.study.ContextTest.WithQualifier.NamedLiteral;
 import com.tdd.study.exception.CyclicDependenciesFoundException;
 import com.tdd.study.exception.DependencyNotFoundException;
 import com.tdd.study.exception.IllegalComponentException;
@@ -25,7 +24,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -238,8 +236,8 @@ public class ContextTest {
 
       DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class,
           () -> config.getContext());
-      assertEquals(TestComponent.class, exception.getComponent());
-      assertEquals(Dependency.class, exception.getDependency());
+      assertEquals(TestComponent.class, exception.getComponent().type());
+      assertEquals(Dependency.class, exception.getDependency().type());
 
     }
 
@@ -408,6 +406,11 @@ public class ContextTest {
       public Class<? extends Annotation> annotationType() {
         return Skywalker.class;
       }
+
+      @Override
+      public boolean equals(Object obj) {
+        return obj instanceof Skywalker;
+      }
     }
 
 
@@ -415,10 +418,15 @@ public class ContextTest {
     public void should_throw_exception_if_dependency_with_qualifier_not_found() {
       config.bind(Dependency.class, new Dependency() {
       });
-      config.bind(InjectConstructorWithQualifier.class, InjectConstructorWithQualifier.class);
+      config.bind(InjectConstructorWithQualifier.class, InjectConstructorWithQualifier.class, new NamedLiteral("owner"));
 
-      assertThrows(DependencyNotFoundException.class, () -> config.getContext());
+      DependencyNotFoundException exception = assertThrows(
+          DependencyNotFoundException.class, () -> config.getContext());
+
+      assertEquals(new Component(Dependency.class, new SkywalkerLiteral()), exception.getDependency());
+      assertEquals(new Component(InjectConstructorWithQualifier.class, new NamedLiteral("owner")), exception.getComponent());
     }
+
 
     static class InjectConstructorWithQualifier {
 
