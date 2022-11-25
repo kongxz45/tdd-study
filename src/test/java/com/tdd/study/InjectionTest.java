@@ -10,8 +10,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.tdd.study.ContextTest.WithQualifier.NamedLiteral;
 import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
@@ -121,6 +123,25 @@ public class InjectionTest {
 
         assertArrayEquals(new ComponentRef[] {ComponentRef.of(dependencyProviderType)}, provider.getDependencies().toArray(
             ComponentRef[]::new));
+      }
+
+      //TODO inject with qualifier
+      //TODO include qualifier with dependency
+      @Test
+      public void should_include_dependency_with_qualifier() {
+        InjectionProvider<InjectConstructorWithQualifier> provider = new InjectionProvider<>(
+            InjectConstructorWithQualifier.class);
+        assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray() );
+        assertEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray() );
+
+
+      }
+
+      static class InjectConstructorWithQualifier {
+
+        @Inject
+        public InjectConstructorWithQualifier(@Named("ChosenOne") Dependency dependency) {
+        }
       }
 
     }
@@ -251,6 +272,9 @@ public class InjectionTest {
         assertArrayEquals(new ComponentRef[] {ComponentRef.of(dependencyProviderType)}, provider.getDependencies().toArray(
             ComponentRef[]::new));
       }
+
+      //TODO inject with qualifier
+      //TODO include qualifier with dependency
 
     }
 
@@ -422,6 +446,9 @@ public class InjectionTest {
         }
 
       }
+
+      //TODO inject with qualifier
+      //TODO include qualifier with dependency
     }
 
     @Nested

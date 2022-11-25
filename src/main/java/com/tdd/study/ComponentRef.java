@@ -19,8 +19,8 @@ public class ComponentRef<T> {
     return new ComponentRef(componentType, qualifier);
   }
 
-  public ComponentRef(ParameterizedType containerType) {
-    init(containerType, null);
+  public ComponentRef(Type containerType, Annotation qualifier) {
+    init(containerType, qualifier);
   }
 
   public ComponentRef(Class<T> componentType) {
@@ -56,10 +56,15 @@ public class ComponentRef<T> {
   }
 
   static ComponentRef of(Type type) {
-    if (type instanceof ParameterizedType) {
-      return new ComponentRef((ParameterizedType) type);
-    }
-    return new ComponentRef((Class<?>) type);
+//    if (type instanceof ParameterizedType) {
+//      return new ComponentRef(type, null);
+//    }
+    //return new ComponentRef((Class<?>) type);
+    return new ComponentRef(type, null);
+  }
+
+  static ComponentRef of(Type type, Annotation qualifier) {
+    return new ComponentRef(type, qualifier);
   }
 
   public Class<?> getComponentType() {
@@ -87,4 +92,5 @@ public class ComponentRef<T> {
   public int hashCode() {
     return Objects.hash(component, containerType);
   }
+
 }

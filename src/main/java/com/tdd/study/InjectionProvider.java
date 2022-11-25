@@ -5,6 +5,8 @@ import static java.util.stream.Stream.concat;
 
 import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Inject;
+import jakarta.inject.Qualifier;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -64,11 +66,18 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
 
   @Override
   public List<ComponentRef> getDependencies() {
-    return concat(concat(stream(injectConstructor.getParameters()).map(
-                parameter -> parameter.getParameterizedType()),
-            injectFields.stream().map(field -> field.getGenericType())),
+    return concat(concat(stream(injectConstructor.getParameters()).map(parameter -> toComponentRef(
+                parameter)),
+            injectFields.stream().map(field -> field.getGenericType()).map(ComponentRef::of)),
         injectMethods.stream().flatMap(method -> stream(method.getParameters()).map(
-            Parameter::getParameterizedType))).map(type -> ComponentRef.of(type)).toList();
+            Parameter::getParameterizedType)).map(ComponentRef::of)).toList();
+  }
+
+  private static ComponentRef toComponentRef(Parameter parameter) {
+    Annotation qualifier = stream(parameter.getAnnotations()).filter(
+        annotation -> annotation.annotationType().isAnnotationPresent(
+            Qualifier.class)).findFirst().orElse(null);
+    return ComponentRef.of(parameter.getParameterizedType(), qualifier);
   }
 
   private static <T extends AnnotatedElement> Stream<T> injectable(T[] declaredMethods) {

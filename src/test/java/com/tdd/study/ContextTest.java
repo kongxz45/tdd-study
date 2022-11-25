@@ -13,6 +13,7 @@ import com.tdd.study.ContextTest.TypeBinding.FieldInject;
 import com.tdd.study.ContextTest.TypeBinding.FieldInjectProvider;
 import com.tdd.study.ContextTest.TypeBinding.MethodInject;
 import com.tdd.study.ContextTest.TypeBinding.MethodInjectProvider;
+import com.tdd.study.ContextTest.WithQualifier.NamedLiteral;
 import com.tdd.study.exception.CyclicDependenciesFoundException;
 import com.tdd.study.exception.DependencyNotFoundException;
 import com.tdd.study.exception.IllegalComponentException;
@@ -20,9 +21,11 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -384,6 +387,12 @@ public class ContextTest {
       public Class<? extends Annotation> annotationType() {
         return jakarta.inject.Named.class;
       }
+
+      @Override
+      public boolean equals(Object o) {
+        if (o instanceof jakarta.inject.Named named) return Objects.equals(value, named.value());
+        return false;
+      }
     }
 
     @java.lang.annotation.Documented
@@ -398,6 +407,23 @@ public class ContextTest {
       @Override
       public Class<? extends Annotation> annotationType() {
         return Skywalker.class;
+      }
+    }
+
+
+    @Test
+    public void should_throw_exception_if_dependency_with_qualifier_not_found() {
+      config.bind(Dependency.class, new Dependency() {
+      });
+      config.bind(InjectConstructorWithQualifier.class, InjectConstructorWithQualifier.class);
+
+      assertThrows(DependencyNotFoundException.class, () -> config.getContext());
+    }
+
+    static class InjectConstructorWithQualifier {
+
+      @Inject
+      public InjectConstructorWithQualifier(@Skywalker Dependency dependency) {
       }
     }
   }
