@@ -125,6 +125,12 @@ public class InjectionTest {
             ComponentRef[]::new));
       }
 
+
+
+    }
+
+    @Nested
+    class WithQualifier {
       //TODO inject with qualifier
       //TODO include qualifier with dependency
       @Test
@@ -142,7 +148,6 @@ public class InjectionTest {
         public InjectConstructorWithQualifier(@Named("ChosenOne") Dependency dependency) {
         }
       }
-
     }
 
     @Nested
@@ -272,6 +277,10 @@ public class InjectionTest {
             ComponentRef[]::new));
       }
 
+    }
+
+    @Nested
+    class WithQualifier {
       //TODO inject with qualifier
       @Test
       public void should_include_dependency_with_qualifier() {
@@ -288,7 +297,6 @@ public class InjectionTest {
         private Dependency dependency;
       }
       //TODO include qualifier with dependency
-
     }
 
     @Nested
@@ -460,6 +468,10 @@ public class InjectionTest {
 
       }
 
+    }
+
+    @Nested
+    class WithQualifier {
       //TODO inject with qualifier
       @Test
       public void should_include_dependency_with_qualifier() {
