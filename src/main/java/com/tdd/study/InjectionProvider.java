@@ -33,6 +33,8 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
 
   private List<Method> injectMethods;
 
+  private List<ComponentRef> dependencies;
+
   public InjectionProvider(Class<T> component) {
     if (Modifier.isAbstract(component.getModifiers())) {
       throw new IllegalComponentException();
@@ -46,6 +48,8 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
     if (injectMethods.stream().anyMatch(method -> method.getTypeParameters().length != 0)) {
       throw new IllegalComponentException();
     }
+
+    this.dependencies = getDependencies();
   }
 
   @Override
@@ -82,9 +86,11 @@ public class InjectionProvider<T> implements ComponentProvider<T> {
   }
 
   private static Annotation getQualifier(AnnotatedElement element) {
-    return stream(element.getAnnotations()).filter(
+    List<Annotation> annotations = stream(element.getAnnotations()).filter(
         annotation -> annotation.annotationType().isAnnotationPresent(
-            Qualifier.class)).findFirst().orElse(null);
+            Qualifier.class)).collect(Collectors.toList());
+    if (annotations.size() > 1) throw new IllegalComponentException();
+    return annotations.stream().findFirst().orElse(null);
   }
 
   private static <T extends AnnotatedElement> Stream<T> injectable(T[] declaredMethods) {

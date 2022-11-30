@@ -11,8 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.tdd.study.ContextTest.WithQualifier.NamedLiteral;
-import com.tdd.study.InjectionTest.ConstructorInjection.WithQualifier.InjectConstructorWithQualifier;
-import com.tdd.study.InjectionTest.FieldInjection.WithQualifier.InjectFieldWithQualifier;
+import com.tdd.study.ContextTest.WithQualifier.Skywalker;
 import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -156,7 +155,6 @@ public class InjectionTest {
             InjectConstructorWithQualifier.class);
         assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray() );
 
-
       }
 
       static class InjectConstructorWithQualifier {
@@ -167,7 +165,17 @@ public class InjectionTest {
         public InjectConstructorWithQualifier(@Named("ChosenOne") Dependency dependency) {
           this.dependency = dependency;
         }
+      }
 
+      @Test
+      public void should_throw_exception_if_dependency_is_tagged_with_multi_qualifiers() {
+        assertThrows(IllegalComponentException.class, () -> new InjectionProvider<>(MultiQualifierInjectConstructor.class));
+
+      }
+      static class MultiQualifierInjectConstructor {
+        @Inject
+        public MultiQualifierInjectConstructor(@Named("ChosenOne") @Skywalker Dependency dependency) {
+        }
       }
     }
 
@@ -332,7 +340,20 @@ public class InjectionTest {
         @Named("ChosenOne")
         Dependency dependency;
       }
-      //TODO include qualifier with dependency
+
+      @Test
+      public void should_throw_exception_if_dependency_is_tagged_with_multi_qualifiers() {
+        assertThrows(IllegalComponentException.class, () -> new InjectionProvider<>(
+            MultiQualifierInjectField.class));
+
+      }
+      static class MultiQualifierInjectField {
+        @Inject
+        @Named("ChosenOne")
+        @Skywalker
+        Dependency dependency;
+
+      }
     }
 
     @Nested
@@ -541,7 +562,18 @@ public class InjectionTest {
           this.dependency = dependency;
         }
       }
-      //TODO include qualifier with dependency
+
+      @Test
+      public void should_throw_exception_if_dependency_is_tagged_with_multi_qualifiers() {
+        assertThrows(IllegalComponentException.class, () -> new InjectionProvider<>(
+            MultiQualifierInjectMethod.class));
+
+      }
+      static class MultiQualifierInjectMethod {
+        @Inject
+        public void install(@Named("ChosenOne") @Skywalker Dependency dependency) {
+        }
+      }
     }
 
     @Nested
