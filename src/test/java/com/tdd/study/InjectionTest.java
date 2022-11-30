@@ -11,6 +11,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.tdd.study.ContextTest.WithQualifier.NamedLiteral;
+import com.tdd.study.InjectionTest.ConstructorInjection.WithQualifier.InjectConstructorWithQualifier;
+import com.tdd.study.InjectionTest.FieldInjection.WithQualifier.InjectFieldWithQualifier;
 import com.tdd.study.exception.IllegalComponentException;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -20,6 +22,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 @Nested
 public class InjectionTest {
@@ -131,8 +134,22 @@ public class InjectionTest {
 
     @Nested
     class WithQualifier {
-      //TODO inject with qualifier
-      //TODO include qualifier with dependency
+      @BeforeEach
+      public void beforeEach() {
+        Mockito.reset(context);
+        when(context.get(eq(ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))))).thenReturn(Optional.of(dependency));
+      }
+
+      @Test
+      public void should_inject_dependency_with_qualifier_via_constructor() {
+        InjectionProvider<InjectConstructorWithQualifier> provider = new InjectionProvider<>(
+            InjectConstructorWithQualifier.class);
+
+        InjectConstructorWithQualifier component = provider.get(context);
+
+        assertSame(dependency, component.dependency);
+      }
+
       @Test
       public void should_include_dependency_with_qualifier() {
         InjectionProvider<InjectConstructorWithQualifier> provider = new InjectionProvider<>(
@@ -144,9 +161,13 @@ public class InjectionTest {
 
       static class InjectConstructorWithQualifier {
 
+        Dependency dependency;
+
         @Inject
         public InjectConstructorWithQualifier(@Named("ChosenOne") Dependency dependency) {
+          this.dependency = dependency;
         }
+
       }
     }
 
@@ -281,7 +302,22 @@ public class InjectionTest {
 
     @Nested
     class WithQualifier {
-      //TODO inject with qualifier
+      @BeforeEach
+      public void beforeEach() {
+        Mockito.reset(context);
+        when(context.get(eq(ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))))).thenReturn(Optional.of(dependency));
+      }
+
+      @Test
+      public void should_inject_dependency_with_qualifier_via_field() {
+        InjectionProvider<InjectFieldWithQualifier> provider = new InjectionProvider<>(
+            InjectFieldWithQualifier.class);
+
+        InjectFieldWithQualifier component = provider.get(context);
+
+        assertSame(dependency, component.dependency);
+      }
+
       @Test
       public void should_include_dependency_with_qualifier() {
         InjectionProvider<InjectFieldWithQualifier> provider = new InjectionProvider<>(
@@ -294,7 +330,7 @@ public class InjectionTest {
 
         @Inject
         @Named("ChosenOne")
-        private Dependency dependency;
+        Dependency dependency;
       }
       //TODO include qualifier with dependency
     }
@@ -472,7 +508,22 @@ public class InjectionTest {
 
     @Nested
     class WithQualifier {
-      //TODO inject with qualifier
+      @BeforeEach
+      public void beforeEach() {
+        Mockito.reset(context);
+        when(context.get(eq(ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))))).thenReturn(Optional.of(dependency));
+      }
+
+      @Test
+      public void should_inject_dependency_with_qualifier_via_method() {
+        InjectionProvider<InjectMethodWithQualifier> provider = new InjectionProvider<>(
+            InjectMethodWithQualifier.class);
+
+        InjectMethodWithQualifier component = provider.get(context);
+
+        assertSame(dependency, component.dependency);
+      }
+
       @Test
       public void should_include_dependency_with_qualifier() {
         InjectionProvider<InjectMethodWithQualifier> provider = new InjectionProvider<>(
@@ -483,8 +534,11 @@ public class InjectionTest {
 
       static class InjectMethodWithQualifier {
 
+        Dependency dependency;
+
         @Inject
         void install(@Named("ChosenOne") Dependency dependency) {
+          this.dependency = dependency;
         }
       }
       //TODO include qualifier with dependency
